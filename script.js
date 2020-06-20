@@ -10,9 +10,8 @@ const player = {
   height: 10,
 };
 
-let width = 10;
-let height = 10;
 let bulletId = 0;
+let walk = false;
 
 //--------------------CANVAS---------------------------//
 const canvasEl = document.createElement("canvas");
@@ -85,33 +84,25 @@ const makingPlayer = () => {
   ctx.fillRect(player.x, player.y, player.width, player.height);
 };
 
-const playerMoving = (e) => {
-  console.log(e);
+const moving = () => {
+  player.x = player.x + 2;
+};
 
+const movingKeysArr = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+const playerMoving = (e) => {
+  
   if (e.code === "ArrowRight") {
-    player.x = player.x + 2;
-    console.log(player.x);
-    ctx.fillStyle = "white";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    walk = true;
   }
-  if (e.code === "ArrowLeft") {
-    player.x = player.x - 2;
-    ctx.fillStyle = "white";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-  }
-  if (e.code === "ArrowUp") {
-    player.y = player.y - 2;
-    ctx.fillStyle = "white";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-  }
-  if (e.code === "ArrowDown") {
-    player.y = player.y + 2;
-    ctx.fillStyle = "white";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+};
+const playerStopping = (e) => {
+  if (e.code === "ArrowRight") {
+    walk = false;
   }
 };
 
 window.addEventListener("keydown", playerMoving);
+window.addEventListener("keyup", playerStopping);
 
 //----------------------CallingGameCharacters-------------------------//
 for (let i = 0; i < 10; i++) {
@@ -158,6 +149,12 @@ const loop = () => {
     bullet.update();
     bullet.draw();
   });
+
+  if (walk === true) {
+    moving();
+  }
+  ctx.fillStyle = "white";
+  ctx.fillRect(player.x, player.y, player.width, player.height);
 };
 
 setInterval(loop, 44);
