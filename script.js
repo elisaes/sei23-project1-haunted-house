@@ -2,8 +2,11 @@
 
 const enemies = {};
 const bulletObj = {};
+const deltaT = 16;
 
 const player = {
+  oldX: 300,
+  oldY: 300,
   x: 300,
   y: 300,
   width: 10,
@@ -12,6 +15,7 @@ const player = {
   origin: { x: 300, y: 300 },
 };
 const house = {};
+const keys = {};
 
 let bulletId = 0;
 let walk = false;
@@ -24,7 +28,7 @@ document.querySelector(".container").appendChild(canvasEl);
 
 const ctx = canvasEl.getContext("2d");
 ctx.fillStyle = "black";
-ctx.fillRect(0, 0, 600, 600);
+ctx.fillRect(0, 0, 800, 800);
 //---------------------------Stop----------------------//
 
 let gameStatus = true;
@@ -39,18 +43,33 @@ document.querySelector("body").appendChild(button);
 //---------------------------CLASSES-----------------------//
 
 class Enemy {
-  constructor(id, x, y, width, height) {
+  constructor(id, x, y, width, height, deltax, deltay) {
     this.id = id;
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
-    this.deltay = 1;
+    this.deltay = deltax;
+    this.deltax = deltay;
+    this.oldX;
+    this.oldY;
   }
 
   update() {
-    this.x = this.x + 0.5;
-    this.y += Math.sin(this.x / 10) * 5 + this.deltay;
+    this.oldX = this.x;
+    this.oldY = this.y;
+    let dx = this.x - player.x;
+    let dy = this.y - player.y;
+
+    let correctx = this.deltax / dx;
+    let correcty = this.deltay / dy;
+    // console.log(correctx);
+    // console.log(correcty);
+    //console.log("dx", dx, "dy", dy)
+
+    this.x = this.x - dx * this.deltax * Math.abs(correctx);
+    this.y = this.y - dy * this.deltay * Math.abs(correcty);
+    //console.log("this", this.x,this.y, "old", this.oldX,this.oldY);
   }
 
   draw() {
@@ -62,7 +81,17 @@ class Enemy {
       this.height
     );
   }
-  hittingPlayer() {}
+  hittingPlayer() {
+    // console.log("playerx, playery", player.x, player.y)
+    // console.log("this.x, this.y", this.x, this.y)
+    if (
+      Math.abs(this.x - player.x) <= player.width &&
+      Math.abs(this.y - player.y) <= player.width
+    ) {
+      player.live -= 0.01;
+      //console.log("player.live", player.live);
+    }
+  }
 }
 
 class Bullet {
@@ -88,8 +117,8 @@ class Bullet {
       this.y = this.y - 10;
     }
     if (
-      Math.abs(this.x - player.x) > 600 ||
-      Math.abs(this.y - player.y) > 600
+      Math.abs(this.x - player.x) > 100 ||
+      Math.abs(this.y - player.y) > 100
     ) {
       delete bulletObj[this.id];
     }
@@ -132,6 +161,48 @@ class Ornament {
     ctx.fillStyle = this.color;
     ctx.fillRect(x, y, this.width, this.height);
   }
+
+  checkCollisionPlayer() {
+    // console.log(this.direction)
+
+    if (
+      player.x + player.width > this.x &&
+      player.y < this.y + this.height &&
+      player.x < this.x + this.width &&
+      player.y + player.width > this.y
+    ) {
+      player.x = player.oldX;
+      player.y = player.oldY;
+    }
+  }
+  checkCollisionEnemy() {
+    // console.log(this.direction)
+    for (const key in enemies) {
+      if (
+        enemies[key].x + enemies[key].width > this.x &&
+        enemies[key].y < this.y + this.height &&
+        enemies[key].x < this.x + this.width &&
+        enemies[key].y + enemies[key].width > this.y
+      ) {
+        enemies[key].x = enemies[key].oldX;
+        enemies[key].y = enemies[key].oldY;
+      }
+    }
+  }
+  checkCollisionBullet() {
+    // console.log(this.direction)
+    for (const key in bulletObj) {
+      if (
+        bulletObj[key].x + bulletObj[key].width > this.x &&
+        bulletObj[key].y < this.y + this.height &&
+        bulletObj[key].x < this.x + this.width &&
+        bulletObj[key].y + bulletObj[key].width > this.y
+      ) {
+        //console.log('mama');
+        delete bulletObj[key];
+      }
+    }
+  }
 }
 
 class Img extends Ornament {
@@ -155,9 +226,9 @@ const makingPlayer = () => {
   ctx.fillRect(player.origin.x, player.origin.y, player.width, player.height);
 };
 
-const keys = {};
-
 const moving = () => {
+  player.oldX = player.x;
+  player.oldY = player.y;
   if (keys["ArrowRight"]) {
     player.x = player.x + 2;
     keys.direction = "right";
@@ -181,45 +252,29 @@ const playerMoving = (e) => {
   // console.log(e.type);
   if (e.type === "keydown") {
     keys[e.code] = true;
-    //console.log(keys);
+    //  console.log(keys);
   }
   if (e.type === "keyup") {
     keys[e.code] = false;
   }
 };
-// const colliding = () => {
-//   console.log("player.x, player.y", player.x, player.y);
-//   //--------top------------------//
-//   if(player.x<=house[5].x && player.y<=house[8].y){
-
-//   }
-//   if (player.x <=  && player.y <= this.y) {
-//     console.log("player.x, player.y", player.x, player.y);
-//     //player.x = this.x;
-//     player.y = this.y - 2;
-//     player.x = this.x - 2;
-//     // console.log("player.x, player.y", player.x, player.y);
-//     // console.log("this.x, this.y", this.x, this.y);
-//   }
-//   if (player.x <= this.x) {
-//     console.log("player.x, player.y", player.x, player.y);
-//     //player.x = this.x;
-//     player.x = this.x;
-//     // console.log("player.x, player.y", player.x, player.y);
-//     // console.log("this.x, this.y", this.x, this.y);
-//   }
-// };
+const dying = () => {
+  if (player.live < 1) {
+    gameStatus = false;
+    alert("sorry, you are dead");
+  }
+};
 
 window.addEventListener("keydown", playerMoving);
 window.addEventListener("keyup", playerMoving);
 
 //----------------------CallingGameCharacters-------------------------//
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 1; i++) {
   let x = Math.random() * 100;
   let y = Math.random() * 100;
   let w = 5;
   let h = 5;
-  enemies[i] = new Enemy(i, x, y, w, h);
+  enemies[i] = new Enemy(i, x, y, w, h, 1, 1);
 }
 
 const callingBalls = (e) => {
@@ -340,27 +395,21 @@ const callingHouse = () => {
     10,
     10,
   ];
-  console.log(xArr.length,yArr.length,wArr.length,hArr.length)
+  console.log(xArr.length, yArr.length, wArr.length, hArr.length);
+  console.log(keys);
   for (let i = 0; i < xArr.length; i++) {
-    house[`${i}`] = new Ornament(xArr[i], yArr[i], wArr[i], hArr[i], "pink");
+    house[`wall${i}`] = new Ornament(
+      xArr[i],
+      yArr[i],
+      wArr[i],
+      hArr[i],
+      "pink"
+    );
   }
 };
 callingHouse();
 
-// const bottom = new Ornament(0, 500, 500, 10, "pink");
-// const left = new Ornament(0, 0, 10, 500, "pink");
-// const tup = new Ornament(0, 0, 500, 10, "red");
-// const right = new Ornament(490, 0, 10, 500, "red");
-
-//const left = new Ornament(10,1000,10,1000,"pink");
-// house["bottom"] = bottom;
-// house["left"] = left;
-// house["tup"] = tup;
-// house["right"] = right;
-
-//house[left]=left;
-
-//console.log("house", house);
+console.log("house", house);
 window.addEventListener("keydown", callingBalls);
 
 //---------------------------Set Interval---------------------------//
@@ -380,19 +429,27 @@ const loop = () => {
 
   enemiesArr.forEach((enemy) => {
     enemy.update();
+
+    enemy.hittingPlayer();
     enemy.draw();
   });
   bulletArr.forEach((bullet) => {
     bullet.update();
-    bullet.draw();
+
     bullet.shootingEnemies();
+    bullet.draw();
   });
   for (const key in house) {
+    house[key].checkCollisionPlayer();
+    house[key].checkCollisionEnemy();
+    house[key].checkCollisionBullet();
     house[key].draw();
   }
   moving();
   makingPlayer();
-  console.log(player.x, player.y);
+  dying();
+
+  //console.log(player);
 };
 
-setInterval(loop, 16);
+setInterval(loop, deltaT);
