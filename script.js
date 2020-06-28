@@ -15,6 +15,7 @@ const player = {
   origin: { x: 300, y: 300 },
 };
 const house = {};
+const imgObj = {};
 const keys = {};
 
 let bulletId = 0;
@@ -22,13 +23,14 @@ let walk = false;
 
 //--------------------CANVAS---------------------------//
 const canvasEl = document.createElement("canvas");
-canvasEl.width = 600;
-canvasEl.height = 600;
+canvasEl.width = 1200;
+canvasEl.height = 800;
+canvasEl.id = "myCanvas";
 document.querySelector(".container").appendChild(canvasEl);
 
 const ctx = canvasEl.getContext("2d");
 ctx.fillStyle = "black";
-ctx.fillRect(0, 0, 800, 800);
+ctx.fillRect(0, 0, 1200, 800);
 //---------------------------Stop----------------------//
 
 let gameStatus = true;
@@ -147,7 +149,7 @@ class Bullet {
 }
 
 class Ornament {
-  constructor(x, y, width, height, color) {
+  constructor(x, y, width, height, color = null) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -206,12 +208,14 @@ class Ornament {
 }
 
 class Img extends Ornament {
-  constructor(x, y, width, height, img) {
-    super(x, y, width, height);
-    this.img = img;
+  constructor(x, y, width, height, color = null, imgUrl) {
+    super(x, y, width, height, (color = null));
+    this.img = document.createElement("img");
+    this.imgUrl = imgUrl;
   }
 
   draw() {
+    this.img.src = this.imgUrl;
     let x = this.x - player.x + player.origin.x;
     let y = this.y - player.y + player.origin.y;
 
@@ -269,6 +273,7 @@ window.addEventListener("keydown", playerMoving);
 window.addEventListener("keyup", playerMoving);
 
 //----------------------CallingGameCharacters-------------------------//
+//-calling enemies----//
 for (let i = 0; i < 1; i++) {
   let x = Math.random() * 100;
   let y = Math.random() * 100;
@@ -276,7 +281,7 @@ for (let i = 0; i < 1; i++) {
   let h = 5;
   enemies[i] = new Enemy(i, x, y, w, h, 1, 1);
 }
-
+//---calling bullets---//
 const callingBalls = (e) => {
   // console.log("helllllll");
 
@@ -290,149 +295,168 @@ const callingBalls = (e) => {
   //console.log(bulletObj);
 };
 
-const callingHouse = () => {
-  const xArr = [
-    0,
-    0,
-    1000,
-    0,
-    400,
-    400,
-    250,
-    0,
-    400,
-    400,
-    250,
-    0,
-    400,
-    400,
-    700,
-    650,
-    400,
-    700,
-    700,
-    700,
-    900,
-    650,
-    700,
-    900,
-  ];
-  const yArr = [
-    0,
-    1000,
-    0,
-    0,
-    850,
-    600,
-    600,
-    600,
-    400,
-    200,
-    200,
-    200,
-    150,
-    0,
-    700,
-    600,
-    600,
-    250,
-    0,
-    600,
-    600,
-    400,
-    400,
-    400,
-  ];
-  const wArr = [
-    10,
-    1000,
-    10,
-    1000,
-    10,
-    10,
-    150,
-    150,
-    150,
-    10,
-    150,
-    150,
-    10,
-    10,
-    10,
-    100,
-    100,
-    10,
-    10,
-    100,
-    100,
-    150,
-    100,
-    100,
-  ];
-  const hArr = [
-    1000,
-    10,
-    1000,
-    10,
-    150,
-    150,
-    10,
-    10,
-    10,
-    200,
-    10,
-    10,
-    50,
-    50,
-    300,
-    10,
-    10,
-    150,
-    150,
-    10,
-    10,
-    10,
-    10,
-    10,
-  ];
-  console.log(xArr.length, yArr.length, wArr.length, hArr.length);
-  console.log(keys);
-  for (let i = 0; i < xArr.length; i++) {
-    house[`wall${i}`] = new Ornament(
-      xArr[i],
-      yArr[i],
-      wArr[i],
-      hArr[i],
-      "pink"
-    );
-  }
-};
-callingHouse();
+//---calling house---//
+
+const xArr = [
+  0,
+  0,
+  1000,
+  0,
+  400,
+  400,
+  250,
+  0,
+  400,
+  400,
+  250,
+  0,
+  400,
+  400,
+  700,
+  650,
+  400,
+  700,
+  700,
+  700,
+  900,
+  650,
+  700,
+  900,
+];
+const yArr = [
+  0,
+  1000,
+  0,
+  0,
+  850,
+  600,
+  600,
+  600,
+  400,
+  200,
+  200,
+  200,
+  150,
+  0,
+  700,
+  600,
+  600,
+  250,
+  0,
+  600,
+  600,
+  400,
+  400,
+  400,
+];
+const wArr = [
+  10,
+  1000,
+  10,
+  1000,
+  10,
+  10,
+  150,
+  150,
+  150,
+  10,
+  150,
+  150,
+  10,
+  10,
+  10,
+  100,
+  100,
+  10,
+  10,
+  100,
+  100,
+  150,
+  100,
+  100,
+];
+const hArr = [
+  1000,
+  10,
+  1000,
+  10,
+  150,
+  150,
+  10,
+  10,
+  10,
+  200,
+  10,
+  10,
+  50,
+  50,
+  300,
+  10,
+  10,
+  150,
+  150,
+  10,
+  10,
+  10,
+  10,
+  10,
+];
+console.log(xArr.length, yArr.length, wArr.length, hArr.length);
+console.log(keys);
+for (let i = 0; i < xArr.length; i++) {
+  house[`wall${i}`] = new Ornament(xArr[i], yArr[i], wArr[i], hArr[i], "pink");
+}
 
 console.log("house", house);
+
+//-ornaments-----//
+const imgX = [930, 750, 630, 550, 415, 410, 10, 175,10,170,325,680,100,10];
+const imgY = [615, 800, 900, 920, 970, 610, 710, 920,910,750,610,740,300,70];
+const imgW = [60, 200, 70, 60, 50, 70, 70, 150,100,100,70,20,200,60];
+const imgH = [40, 200, 100, 70, 30, 50, 150, 70,100,100,70,100,200,60];
+const imgUrl = [
+  "./img/comoda.png",
+  "./img/bed1.png",
+  "./img/table2.png",
+  "./img/sofa2.png",
+  "./img/books1.png",
+  "./img/comoda.png",
+  "./img/sofa4.png",
+  "./img/sofa5.png",
+  "./img/plant1.png",
+  "./img/cofeetable1.png",
+  "./img/redchair.png",
+  "./img/tv2.png",
+  "./img/tableDining1.png",
+  "./img/toilet.png"
+];
+for (let i = 0; i < 14; i++) {
+  imgObj[i] = new Img(imgX[i], imgY[i], imgW[i], imgH[i], null, imgUrl[i]);
+}
+console.log("imgObj", imgObj);
+//----------event listener for bullets-//
+
 window.addEventListener("keydown", callingBalls);
 
 //---------------------------Set Interval---------------------------//
-let time = Date.now();
+
 const loop = () => {
   if (!gameStatus) {
     return;
   }
-  const diff = Date.now() - time;
-  //  console.log(diff);
-  time = Date.now();
+
   const enemiesArr = Object.values(enemies);
   const bulletArr = Object.values(bulletObj);
   // console.log(bulletArr)
   ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, 600, 600);
+  ctx.fillRect(0, 0, 1200, 800);
 
-  enemiesArr.forEach((enemy) => {
-    enemy.update();
+  // enemiesArr.forEach((enemy) => {
+  //   enemy.update();
 
-    enemy.hittingPlayer();
-    enemy.draw();
-  });
+  //   enemy.hittingPlayer();
+  //   enemy.draw();
+  // });
   bulletArr.forEach((bullet) => {
     bullet.update();
 
@@ -443,13 +467,23 @@ const loop = () => {
     house[key].checkCollisionPlayer();
     house[key].checkCollisionEnemy();
     house[key].checkCollisionBullet();
+  }
+  for (const key in imgObj) {
+    imgObj[key].checkCollisionPlayer();
+    imgObj[key].checkCollisionEnemy();
+    imgObj[key].checkCollisionBullet();
+    imgObj[key].draw();
+  }
+
+  for (const key in house) {
     house[key].draw();
   }
+
   moving();
   makingPlayer();
   dying();
 
-  //console.log(player);
+  console.log(player.x, player.y);
 };
 
 setInterval(loop, deltaT);
