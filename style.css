@@ -3,4 +3,34 @@
 }
 .container {
   display: inline-block;
+  height: 500px;
+}
+img {
+  margin: auto;
+}
+.title {
+  padding-top: 100px;
+  padding-bottom: 0;
+}
+
+.legend {
+  height: 800px;
+  background-image: url("./img/blooddrip.png");
+  background-repeat: no-repeat;
+  background-position: center top;
+}
+.play:hover {
+  color: #680101;
+}
+.msg {
+  padding-top: 100px;
+  font-family: "Yellowtail", cursive;
+  font-size: 24px;
+  background-image: url("./img/girl1.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+.play {
+  padding-top: 100px;
 }

@@ -17,7 +17,7 @@ const player = {
   image: new Image(),
 };
 
-player.image.src = "./img/characters/player.png";
+player.image.src = "./img/characters/fsprite.png";
 
 const house = {};
 const imgObj = {};
@@ -25,7 +25,7 @@ const keys = {};
 
 let bulletId = 0;
 let walk = false;
-let gameStatus = true;
+let gameStatus = false;
 const enemies = {
   livingRoom: {
     number: 5,
@@ -70,12 +70,15 @@ const enemies = {
     enemiesEl: {},
   },
 };
-
 //--------------------CANVAS---------------------------//
+
 const canvasEl = document.createElement("canvas");
+
 canvasEl.width = 1200;
 canvasEl.height = 800;
 canvasEl.id = "myCanvas";
+canvasEl.style.display = "none";
+
 document.querySelector(".container").appendChild(canvasEl);
 
 const ctx = canvasEl.getContext("2d");
@@ -84,22 +87,70 @@ ctx.fillRect(0, 0, 1200, 800);
 //---------------------------Stop----------------------//
 
 const button = document.createElement("button");
+button.style.display = "none";
 button.innerText = "stop/start";
 const stop = () => {
   gameStatus = !gameStatus;
 };
 button.addEventListener("click", stop);
-document.querySelector("body").appendChild(button);
+document.querySelector(".container").appendChild(button);
+//--------------------buttons----//
 
-//--------------------------ENEMY IMAGES-------------------//
+displayCanvas = () => {
+  const msg = document.querySelector(".msg");
+  msg.style.display = "none";
+  canvasEl.style.display = "block";
+  button.style.display = "block";
+  gameStatus = true;
+  healthBarCont.style.display = "block";
+  displayHealth();
+};
 
-const enemyImages = [
-  "./img/characters/bat.png",
-  "./img/characters/ghosta.png",
-  "./img/characters/ghostb.png",
-  "./img/characters/golem.png",
-  "./img/characters/skull.png",
-];
+showMsg = () => {
+  const legend = document.querySelector(".legend");
+  legend.style.display = "none";
+  const msg = document.createElement("div");
+  msg.classList = "msg";
+  msg.innerText = msgText.msg1;
+
+  const container = document.querySelector(".container");
+  container.appendChild(msg);
+
+  const play = document.createElement("h1");
+  play.innerText = "Play";
+  play.classList = "play";
+  msg.appendChild(play);
+  play.addEventListener("click", displayCanvas);
+};
+const enterButton = document.querySelector("button");
+enterButton.addEventListener("click", showMsg);
+
+//--------------------------Health bar--------------------//
+const healthBarCont = document.createElement("div");
+const healthBar = document.createElement("div");
+
+const displayHealth = () => {
+  const container = document.querySelector(".container");
+  const healthText = document.createElement("p");
+  healthText.innerText = "Player life";
+
+  healthBarCont.style.width = 100 + "px";
+  healthBarCont.style.marginTop = 50 + "px";
+  healthBarCont.style.height = 50 + "px";
+  healthBarCont.style.border = "2px solid black";
+  healthBarCont.style.backgroundColor = "	#bae1ff";
+
+  healthBar.style.height = 50 + "px";
+  healthBar.style.backgroundColor = "blue";
+  healthBarCont.appendChild(healthBar);
+  healthBarCont.appendChild(healthText);
+  container.appendChild(healthBarCont);
+};
+const updateHealth = () => {
+  // console.log("LIVE", player.live);
+  // console.log((200 * player.live) / 10);
+  healthBar.style.width = (100 * player.live) / 10 + "px";
+};
 
 //---------------------------CLASSES-----------------------//
 
@@ -116,6 +167,7 @@ class Enemy {
     this.oldY;
     this.img = new Image();
     this.img.src = imgUrl;
+    this.direction;
   }
 
   update() {
@@ -123,7 +175,17 @@ class Enemy {
     this.oldY = this.y;
     this.x = this.x - ((this.x - player.x) * deltaT) / 1000;
     this.y = this.y - ((this.y - player.y) * deltaT) / 1000;
-    console.log(this.x, this.y);
+
+    if (this.oldX < this.x) {
+      this.direction = "right";
+    } else {
+      this.direction = "left";
+    }
+    if (this.oldY > this.y) {
+      this.direction = "up";
+    } else {
+      this.direction = "down";
+    }
   }
 
   draw() {
@@ -134,14 +196,11 @@ class Enemy {
     ctx.drawImage(this.img, x, y, this.width, this.height);
   }
   hittingPlayer() {
-    // console.log("playerx, playery", player.x, player.y)
-    // console.log("this.x, this.y", this.x, this.y)
     if (
       Math.abs(this.x - player.x) <= player.width &&
       Math.abs(this.y - player.y) <= player.width
     ) {
       player.live -= 0.01;
-      //console.log("player.live", player.live);
     }
   }
 }
@@ -190,8 +249,8 @@ class Bullet {
     const enemyOb = enemies[player.place].enemiesEl;
     for (const key in enemyOb) {
       if (
-        Math.abs(this.x - enemyOb[key].x) <= enemyOb[key].width &&
-        Math.abs(this.y - enemyOb[key].y) <= enemyOb[key].width
+        Math.abs(this.x - enemyOb[key].x) <= enemyOb[key].width - 10 &&
+        Math.abs(this.y - enemyOb[key].y) <= enemyOb[key].width - 10
       ) {
         delete enemyOb[key];
       }
@@ -219,10 +278,10 @@ class Ornament {
     // console.log(this.direction)
 
     if (
-      player.x + player.width > this.x &&
-      player.y < this.y + this.height &&
-      player.x < this.x + this.width &&
-      player.y + player.width > this.y
+      player.x + player.width > this.x && //right
+      player.y < this.y + this.height && //down
+      player.x < this.x + this.width && //right
+      player.y + player.height > this.y //up
     ) {
       player.x = player.oldX;
       player.y = player.oldY;
@@ -272,7 +331,6 @@ class Img extends Ornament {
     let x = this.x - player.x + player.origin.x;
     let y = this.y - player.y + player.origin.y;
 
-    // console.log(x,y)
     ctx.drawImage(this.img, x, y, this.width, this.height);
   }
 }
@@ -291,47 +349,112 @@ class Floor {
     let x = this.x - player.x + player.origin.x;
     let y = this.y - player.y + player.origin.y;
 
-    // console.log(x,y)
-    ctx.drawImage(this.img, x, y, this.width, this.height);
+    ctx.drawImage(this.img, x, y, this.w, this.h);
   }
 }
 //------------------------PLayer------------------------------------//
 
 const checkingPosition = () => {
-  if (player.x < 400 && player.y < 200) {
+  if (player.x + player.width / 2 < 400 && player.y + player.height / 2 < 200) {
     player.place = "bathroom";
   }
-  if (player.x < 400 && player.y > 200 && player.y < 600) {
+  if (
+    player.x + player.width / 2 < 400 &&
+    player.y + player.height / 2 > 200 &&
+    player.y + player.height / 2 < 600
+  ) {
     player.place = "diningRoom";
   }
-  if (player.x < 400 && player.y > 600) {
+  if (player.x + player.width / 2 < 400 && player.y + player.height / 2 > 600) {
     player.place = "livingRoom";
   }
-  if (player.x > 400 && player.x < 700 && player.y < 400) {
+  if (
+    player.x + player.width / 2 > 400 &&
+    player.x + player.width / 2 < 700 &&
+    player.y + player.height / 2 < 400
+  ) {
     player.place = "kitchen";
   }
-  if (player.x > 400 && player.x < 700 && player.y > 600) {
+  if (
+    player.x + player.width / 2 > 400 &&
+    player.x + player.width / 2 < 700 &&
+    player.y + player.height / 2 > 600
+  ) {
     player.place = "studio";
   }
-  if (player.x > 700 && player.y < 400) {
+  if (player.x + player.width / 2 > 700 && player.y + player.height / 2 < 400) {
     player.place = "storageRoom";
   }
-  if (player.x > 700 && player.y > 600) {
+  if (player.x + player.width / 2 > 700 && player.y + player.height / 2 > 600) {
     player.place = "bedRoom";
   }
 };
+let imgFrameNumberX = 0;
+
+const totalNumberOfFramesX = 4;
+
+const widthOfImage = 256;
+const heightOfImage = 64;
+const widthOfSingleImage = widthOfImage / totalNumberOfFramesX;
+player.width = widthOfSingleImage;
+player.height = heightOfImage;
 
 const makingPlayer = () => {
-  ctx.fillStyle = "white";
-  ctx.drawImage(
-    player.image,
-    player.origin.x,
-    player.origin.y,
-    player.width,
-    player.height
+  imgFrameNumberX++;
+  let imageFrameNumberY;
+
+  imgFrameNumberX = imgFrameNumberX % totalNumberOfFramesX;
+
+  if (keys.direction == "down") {
+    imageFrameNumberY = 0;
+  }
+  if (keys.direction == "left") {
+    imageFrameNumberY = 64;
+  }
+  if (keys.direction == "right") {
+    imageFrameNumberY = 128;
+  }
+  if (keys.direction == "up") {
+    imageFrameNumberY = 192;
+  }
+  console.log(imageFrameNumberY);
+  // //console.log(
+  //   imgFrameNumberX * widthOfSingleImage,
+  //   imageFrameNumberY,
+  //   widthOfSingleImage,
+  //   heightOfImage,
+  //   player.origin.x,
+  //   player.origin.y,
+  //   widthOfSingleImage,
+  //   heightOfImage
+  // );
+
+  // ctx.drawImage(
+  //   player.image,
+  //   imgFrameNumberX * widthOfSingleImage,
+  //   imageFrameNumberY,
+  //   widthOfSingleImage,
+  //   heightOfImage,
+  //   player.origin.x,
+  //   player.origin.y,
+  //   widthOfSingleImage,
+  //   heightOfImage
+  // );
+  console.log(
+    ctx.drawImage(
+      player.image,
+      imgFrameNumberX * widthOfSingleImage,
+      imageFrameNumberY,
+      widthOfSingleImage,
+      heightOfImage,
+      player.origin.x,
+      player.origin.y,
+      widthOfSingleImage,
+      heightOfImage
+    )
   );
 };
-
+const movingKeysArr = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 const moving = () => {
   player.oldX = player.x;
   player.oldY = player.y;
@@ -353,7 +476,6 @@ const moving = () => {
   }
 };
 
-const movingKeysArr = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 const playerMoving = (e) => {
   movingKeysArr.forEach((val) => {
     if (e.code === val) {
@@ -370,7 +492,7 @@ const playerMoving = (e) => {
   }
 };
 const dying = () => {
-  if (player.live < 1) {
+  if (player.live < 0) {
     gameStatus = false;
     alert("sorry, you are dead");
   }
@@ -380,11 +502,50 @@ window.addEventListener("keydown", playerMoving);
 window.addEventListener("keyup", playerMoving);
 
 //----------------------CallingGameCharacters-------------------------//
-const makingFloor=()=>{
+const floorArr = [];
+const doorArrx = [400, 150, 150, 400, 550, 500, 700, 800, 700, 800];
+const doorArry = [50, 200, 600, 750, 400, 600, 150, 400, 600, 600];
+const doorArrW = [10, 100, 100, 10, 100, 150, 10, 100, 10, 100];
+const doorArrH = [100, 10, 10, 100, 10, 10, 100, 10, 100, 10];
 
-}
+(function makingFloor() {
+  const livFloor = new Floor(10, 600, 400, 400, "./img/floor/floor6.jpg");
+  floorArr.push(livFloor);
+  const dinFloor1 = new Floor(10, 200, 400, 400, "./img/floor/floor6.jpg");
+  floorArr.push(dinFloor1);
+  const dinFloor2 = new Floor(400, 400, 600, 200, "./img/floor/floor6.jpg");
+  floorArr.push(dinFloor2);
+  const studio = new Floor(400, 600, 300, 400, "./img/floor/carpet4.png");
+  floorArr.push(studio);
+  const bath = new Floor(10, 10, 400, 200, "./img/floor/tiles2.jpeg");
+  floorArr.push(bath);
+  const kitchen = new Floor(400, 10, 300, 400, "./img/floor/floor5.jpg");
+  floorArr.push(kitchen);
+  const storage = new Floor(700, 10, 300, 400, "./img/floor/carpet6.png");
+  floorArr.push(storage);
+  const bed = new Floor(700, 600, 300, 400, "./img/floor/carpet6.png");
+  floorArr.push(bed);
+  for (let i = 0; i < doorArrx.length; i++) {
+    floorArr.push(
+      new Floor(
+        doorArrx[i],
+        doorArry[i],
+        doorArrW[i],
+        doorArrH[i],
+        "./img/floor/tiles1.jpg"
+      )
+    );
+  }
+})();
 
 //-calling enemies----//
+const enemyImages = [
+  "./img/characters/bat.png",
+  "./img/characters/ghosta.png",
+  "./img/characters/ghostb.png",
+  "./img/characters/golem.png",
+  "./img/characters/skull.png",
+];
 
 const callingEnemies = () => {
   const currentRoom = enemies[player.place];
@@ -408,20 +569,21 @@ const callingEnemies = () => {
 
 //---calling bullets---//
 const callingBalls = (e) => {
-  // console.log("helllllll");
-
   if (e.code === "KeyX") {
-    // console.log("xxxxxxxxxxxxxxxxxx");
     bulletId = bulletId + 1;
-    let bullet = new Bullet(player.x, player.y, 5, 5, bulletId, keys.direction);
+    let bullet = new Bullet(
+      player.x + player.width / 2,
+      player.y + player.height / 2,
+      5,
+      5,
+      bulletId,
+      keys.direction
+    );
     bulletObj[bulletId] = bullet;
-    //console.log("id", bulletId);
   }
-  //console.log(bulletObj);
 };
 
 //---calling house---//
-
 const xArr = [
   0,
   0,
@@ -526,10 +688,15 @@ const hArr = [
   10,
   10,
 ];
-//console.log(xArr.length, yArr.length, wArr.length, hArr.length);
-//console.log(keys);
+
 for (let i = 0; i < xArr.length; i++) {
-  house[`wall${i}`] = new Ornament(xArr[i], yArr[i], wArr[i], hArr[i], "pink");
+  house[`wall${i}`] = new Ornament(
+    xArr[i],
+    yArr[i],
+    wArr[i],
+    hArr[i],
+    "#432c19"
+  );
 }
 
 //-ornaments-----//
@@ -662,7 +829,7 @@ const imgUrl = [
   "./img/cofeetable1.png",
   "./img/redchair.png",
   "./img/tv2.png",
-  "./img/tableDining1.png",
+  "./img/dining1.png",
   "./img/toilet.png",
   "./img/lavabo.png",
   "./img/bath.png",
@@ -696,12 +863,16 @@ const loop = () => {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, 1200, 800);
 
-  for (const key in enemies[player.place].enemiesEl) {
-    const enemyOb = enemies[player.place].enemiesEl[key];
-    enemyOb.update();
-    enemyOb.draw();
-    enemyOb.hittingPlayer();
-  }
+  floorArr.forEach((floor) => {
+    floor.draw();
+  });
+
+  // for (const key in enemies[player.place].enemiesEl) {
+  //   const enemyOb = enemies[player.place].enemiesEl[key];
+  //   enemyOb.update();
+  //   enemyOb.draw();
+  //   enemyOb.hittingPlayer();
+  // }
 
   const bulletArr = Object.values(bulletObj);
 
@@ -728,12 +899,11 @@ const loop = () => {
   }
 
   callingEnemies();
-  console.log(player.x, player.y);
-
   moving();
   checkingPosition();
   makingPlayer();
   dying();
+  updateHealth();
 };
 
 setInterval(loop, deltaT);
