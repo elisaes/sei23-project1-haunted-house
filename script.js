@@ -3,6 +3,7 @@
 let enemyCounter = 0;
 const bulletObj = {};
 const deltaT = 16;
+let lastEnemyLife = 10;
 
 const player = {
   oldX: 500,
@@ -27,6 +28,7 @@ const keys = {};
 let bulletId = 0;
 let walk = false;
 let gameStatus = false;
+let enemyStatus = true;
 const enemies = {
   livingRoom: {
     number: 5,
@@ -71,6 +73,7 @@ const enemies = {
     enemiesEl: {},
   },
 };
+let lastEnemy = false;
 //--------------------CANVAS---------------------------//
 
 const canvasEl = document.createElement("canvas");
@@ -165,7 +168,8 @@ class Enemy {
     deltax,
     deltay,
     imgUrl,
-    imgYPos
+    imgYPos,
+    enemyLife
   ) {
     this.id = id;
     this.x = x;
@@ -186,8 +190,9 @@ class Enemy {
     this.imgFrameNumberX = 0;
     this.imgFrameNumberY;
     this.widthOfSingleEnemy = this.widthOfSprite / this.totalNumberOfFramesX;
-  
+
     this.imgYPos = imgYPos;
+    this.enemyLife = enemyLife;
   }
 
   update() {
@@ -210,7 +215,7 @@ class Enemy {
 
   draw() {
     this.countEnemy++;
-    if (this.countEnemy == 8){
+    if (this.countEnemy == 8) {
       this.imgFrameNumberX++;
 
       this.countEnemy = 0;
@@ -222,13 +227,13 @@ class Enemy {
       this.imageFrameNumberY = this.imgYPos;
     }
     if (this.direction == "left") {
-      this.imageFrameNumberY =this.imgYPos+ this.heightOfSingleEnemy;
+      this.imageFrameNumberY = this.imgYPos + this.heightOfSingleEnemy;
     }
     if (this.direction == "right") {
-      this.imageFrameNumberY = this.imgYPos+this.heightOfSingleEnemy * 2;
+      this.imageFrameNumberY = this.imgYPos + this.heightOfSingleEnemy * 2;
     }
     if (this.direction == "up") {
-      this.imageFrameNumberY =this.imgYPos+ this.heightOfSingleEnemy * 3;
+      this.imageFrameNumberY = this.imgYPos + this.heightOfSingleEnemy * 3;
     }
     // console.log(imageFrameNumberY);
 
@@ -250,11 +255,17 @@ class Enemy {
 
   hittingPlayer() {
     if (
-      Math.abs(this.x - player.x) <= player.width &&
-      Math.abs(this.y - player.y) <= player.width
+      Math.abs(this.x - player.x) <= player.width / 2 &&
+      Math.abs(this.y - player.y) <= player.height / 2
     ) {
       player.live -= 0.01;
     }
+    if (hintsObj.kitchen.status == true) {
+      hintsObj.kitchen.status = false;
+      player.live = 10;
+    }
+
+    //console.log("player.live", player.live);
   }
 }
 
@@ -266,8 +277,14 @@ class Bullet {
     this.height = h;
     this.id = id;
     this.direction = direction;
+    this.bulletSize = 1;
   }
   update() {
+    let bulletLongScope = 100;
+    if (hintsObj.studio.status == true) {
+      bulletLongScope = 200;
+    }
+
     if (this.direction === "right") {
       this.x = this.x + 10;
     }
@@ -280,9 +297,10 @@ class Bullet {
     if (this.direction === "up") {
       this.y = this.y - 10;
     }
+
     if (
-      Math.abs(this.x - player.x) > 100 ||
-      Math.abs(this.y - player.y) > 100
+      Math.abs(this.x - player.x) > bulletLongScope ||
+      Math.abs(this.y - player.y) > bulletLongScope
     ) {
       delete bulletObj[this.id];
     }
@@ -293,18 +311,30 @@ class Bullet {
     ctx.fillRect(
       this.x - player.x + player.origin.x,
       this.y - player.y + player.origin.y,
-      this.width,
-      this.height
+      this.width * this.bulletSize,
+      this.height * this.bulletSize
     );
   }
 
   shootingEnemies() {
+    if (hintsObj.bathroom.status === true) {
+      this.bulletSize = 1.3;
+    }
+
     const enemyOb = enemies[player.place].enemiesEl;
     for (const key in enemyOb) {
       if (
-        Math.abs(this.x - enemyOb[key].x) <= enemyOb[key].widthOfSingleEnemy &&
-        Math.abs(this.y - enemyOb[key].y) <= enemyOb[key].heightOfSingleEnemy
+        Math.abs(this.x - enemyOb[key].x) / this.bulletSize <=
+          enemyOb[key].widthOfSingleEnemy &&
+        Math.abs(this.y - enemyOb[key].y) / this.bulletSize <=
+          enemyOb[key].heightOfSingleEnemy
       ) {
+        //console.log(this.x - enemyOb[key].x);
+        //console.log(enemyOb[key].heightOfSingleEnemy);
+        enemyOb[key].enemyLife -= 1;
+        delete bulletObj[this.id];
+      }
+      if (enemyOb[key].enemyLife <= 0) {
         delete enemyOb[key];
       }
     }
@@ -346,10 +376,10 @@ class Ornament {
     // console.log(this.direction)
     for (const key in enemyOb) {
       if (
-        enemyOb[key].x + enemyOb[key].width > this.x &&
+        enemyOb[key].x + enemyOb[key].heightOfSingleEnemy > this.x &&
         enemyOb[key].y < this.y + this.height &&
         enemyOb[key].x < this.x + this.width &&
-        enemyOb[key].y + enemyOb[key].width > this.y
+        enemyOb[key].y + enemyOb[key].heightOfSingleEnemy > this.y
       ) {
         enemyOb[key].x = enemyOb[key].oldX;
         enemyOb[key].y = enemyOb[key].oldY;
@@ -404,6 +434,67 @@ class Floor {
     ctx.drawImage(this.img, x, y, this.w, this.h);
   }
 }
+
+class Hint {
+  constructor(id, x, y, imgUrl, w, h, msg) {
+    this.x = x;
+    this.y = y;
+    this.img = imgUrl;
+    this.w = w;
+    this.h = h;
+    this.msg = msg;
+    this.imgEl = document.createElement("img");
+    this.imgEl.classList = "openModal";
+
+    this.modal = document.createElement("div");
+    this.modal.classList = "modal";
+    this.modalContent = document.createElement("div");
+    this.modalContent.classList = "modalContent";
+    this.span = document.createElement("span");
+    this.span.classList = "close";
+    this.p = document.createElement("p");
+    this.p.innerText = msg;
+    this.modalContent.appendChild(this.p);
+    this.modalContent.appendChild(this.span);
+    this.modal.appendChild(this.modalContent);
+    document.querySelector(".container").appendChild(this.modal);
+    this.modal.style.display = "none";
+    this.span.addEventListener("click", this.closeModal);
+  }
+  draw() {
+    this.imgEl.src = this.img;
+    let x = this.x - player.x + player.origin.x;
+    let y = this.y - player.y + player.origin.y;
+
+    ctx.drawImage(this.imgEl, x, y, this.w, this.h);
+  }
+  displayModal() {
+    if (
+      keys.KeyC == true &&
+      Math.abs(player.x - this.x) < this.w &&
+      Math.abs(player.y - this.y) < this.h
+    ) {
+      this.modal.style.display = "block";
+      enemyStatus = false;
+      hintsObj[player.place].status = true;
+      if (
+        hintsObj[player.place].power &&
+        !bagArr.includes(hintsObj[player.place].power)
+      ) {
+        bagArr.push(hintsObj[player.place].power);
+      }
+      console.log(player.x, player.y);
+    }
+  }
+
+  closeModal() {
+    if (keys.KeyX == true) {
+      this.modal.style.display = "none";
+      enemyStatus = true;
+    }
+  }
+}
+
 //------------------------PLayer------------------------------------//
 
 const checkingPosition = () => {
@@ -463,7 +554,7 @@ const makingPlayer = () => {
     imgFrameNumberX = 0;
   }
 
-  console.log(8 % 15);
+  //console.log(8 % 15);
 
   if (keys.direction == "down") {
     imageFrameNumberY = 0;
@@ -495,19 +586,19 @@ const moving = () => {
   player.oldX = player.x;
   player.oldY = player.y;
   if (keys["ArrowRight"]) {
-    player.x = player.x + 2;
+    player.x = player.x + 5;
     keys.direction = "right";
   }
   if (keys["ArrowLeft"]) {
-    player.x = player.x - 2;
+    player.x = player.x - 5;
     keys.direction = "left";
   }
   if (keys["ArrowDown"]) {
-    player.y = player.y + 2;
+    player.y = player.y + 5;
     keys.direction = "down";
   }
   if (keys["ArrowUp"]) {
-    player.y = player.y - 2;
+    player.y = player.y - 5;
     keys.direction = "up";
   }
 };
@@ -521,7 +612,7 @@ const playerMoving = (e) => {
   // console.log(e.type);
   if (e.type === "keydown") {
     keys[e.code] = true;
-    //  console.log(keys);
+    // console.log(keys);
   }
   if (e.type === "keyup") {
     keys[e.code] = false;
@@ -534,10 +625,19 @@ const dying = () => {
   }
 };
 
+const mouseMoveEventListener = (e) => {
+  console.log(e.offsetX, e.offsetY);
+};
+
 window.addEventListener("keydown", playerMoving);
 window.addEventListener("keyup", playerMoving);
 
+document
+  .querySelector("canvas")
+  .addEventListener("mousedown", mouseMoveEventListener);
+
 //----------------------CallingGameCharacters-------------------------//
+//----------------calling floor---------------//
 const floorArr = [];
 const doorArrx = [400, 150, 150, 400, 550, 500, 700, 800, 700, 800];
 const doorArry = [50, 200, 600, 750, 400, 600, 150, 400, 600, 600];
@@ -586,12 +686,31 @@ const enemyImages = [
 const enemySpriteWidth = [144, 144, 134, 138, 144, 144];
 const enemyImgHeight = [48, 48, 46.75, 48.75, 48, 48];
 
-const enemyImgYPos = [0, 0, 0,0, 0, 48*4];
-
+const enemyImgYPos = [0, 0, 0, 0, 0, 48 * 4];
 
 const callingEnemies = () => {
   const currentRoom = enemies[player.place];
   enemyCounter += 0.01;
+  if (
+    lastEnemy == true &&
+    hintsObj.bedRoom.status == true &&
+    !enemies.bedRoom.enemiesEl.last
+  ) {
+    lastEnemyLife -= 1;
+    enemies.bedRoom.enemiesEl.last = new Enemy(
+      "last",
+      850,
+      700,
+      192,
+      64,
+      1,
+      1,
+      "./img/characters/fatManSprite.png",
+      0,
+      1
+    );
+    console.log(lastEnemyLife);
+  }
   if (Math.floor(enemyCounter) % 2 == 0) {
     if (Object.values(currentRoom.enemiesEl).length < currentRoom.number) {
       const i = Math.floor(Math.random() * currentRoom.x.length);
@@ -606,7 +725,8 @@ const callingEnemies = () => {
         1,
         1,
         enemyImages[enemyIndex],
-        enemyImgYPos[enemyIndex]
+        enemyImgYPos[enemyIndex],
+        1
       );
     }
   }
@@ -894,6 +1014,48 @@ for (let i = 0; i < imgX.length; i++) {
   imgObj[i] = new Img(imgX[i], imgY[i], imgW[i], imgH[i], null, imgUrl[i]);
 }
 
+//------calling hints---------//
+
+for (const key in hintsObj) {
+  hintsObj[key].totalObj = new Hint(
+    key,
+    hintsObj[key].x,
+    hintsObj[key].y,
+    "./img/floor/hint1.png",
+    50,
+    50,
+    hintsObj[key].msg
+  );
+}
+
+const bagArr = [];
+const bagEl = document.createElement("div");
+document.querySelector(".container").appendChild(bagEl);
+
+const updateBagEl = () => {
+  if (bagArr.length >= 6) {
+    lastEnemy = true;
+    //console.log("mamama");
+    hintsObj.bedRoom.totalObj = new Hint(
+      "bedRoom",
+      hintsObj.bedRoom.x,
+      hintsObj.bedRoom.y,
+      "./img/floor/hint1.png",
+      50,
+      50,
+      "You have collected all the power ups, you are ready to fight with Lord Crown"
+    );
+
+    ////////////////////////////////////////////////
+  }
+  let string = "";
+  for (let i = 0; i < bagArr.length; i++) {
+    string += bagArr[i] + " ";
+  }
+  //console.log(bagArr);
+  bagEl.innerHTML = string;
+};
+
 //----------event listener for bullets-//
 
 window.addEventListener("keydown", callingBalls);
@@ -904,6 +1066,11 @@ const loop = () => {
   if (!gameStatus) {
     return;
   }
+  if (lastEnemyLife == 0) {
+    new Img(0, 0, 1200, 800, "white", "./img/characters/gameOver.jpg");
+    alert("you have killed the enemy");
+    gameStatus = false;
+  }
 
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, 1200, 800);
@@ -912,15 +1079,29 @@ const loop = () => {
     floor.draw();
   });
 
+  for (const key in hintsObj) {
+    hintsObj[key].totalObj.displayModal();
+    hintsObj[key].totalObj.closeModal();
+    hintsObj[key].totalObj.draw();
+  }
+
   for (const key in enemies[player.place].enemiesEl) {
+    if (!enemyStatus) {
+      return;
+    }
     const enemyOb = enemies[player.place].enemiesEl[key];
+
     enemyOb.update();
-    enemyOb.draw();
+
     enemyOb.hittingPlayer();
   }
 
-  const bulletArr = Object.values(bulletObj);
+  for (const key in enemies[player.place].enemiesEl) {
+    const enemyOb = enemies[player.place].enemiesEl[key];
+    enemyOb.draw();
+  }
 
+  const bulletArr = Object.values(bulletObj);
   bulletArr.forEach((bullet) => {
     bullet.update();
 
@@ -949,6 +1130,7 @@ const loop = () => {
   makingPlayer();
   dying();
   updateHealth();
+  updateBagEl();
 };
 
 setInterval(loop, deltaT);
