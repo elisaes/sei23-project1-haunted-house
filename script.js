@@ -5,16 +5,17 @@ const bulletObj = {};
 const deltaT = 16;
 
 const player = {
-  oldX: 300,
-  oldY: 300,
-  x: 300,
-  y: 300,
+  oldX: 500,
+  oldY: 500,
+  x: 500,
+  y: 500,
   width: 18,
   height: 29,
   live: 10,
-  origin: { x: 300, y: 300 },
+  origin: { x: 500, y: 500 },
   place: "diningRoom",
   image: new Image(),
+  spriteCount: 0,
 };
 
 player.image.src = "./img/characters/fsprite.png";
@@ -155,19 +156,38 @@ const updateHealth = () => {
 //---------------------------CLASSES-----------------------//
 
 class Enemy {
-  constructor(id, x, y, width, height, deltax, deltay, imgUrl) {
+  constructor(
+    id,
+    x,
+    y,
+    widthOfSprite,
+    heightOfSingleEnemy,
+    deltax,
+    deltay,
+    imgUrl,
+    imgYPos
+  ) {
     this.id = id;
     this.x = x;
     this.y = y;
-    this.width = width;
-    this.height = height;
+    this.widthOfSprite = widthOfSprite;
+
+    this.heightOfSingleEnemy = heightOfSingleEnemy;
     this.deltay = deltax;
     this.deltax = deltay;
     this.oldX;
     this.oldY;
-    this.img = new Image();
+    this.img = document.createElement("img");
     this.img.src = imgUrl;
     this.direction;
+    this.countEnemy = 0;
+    this.imgFrameNumberX = 0;
+    this.totalNumberOfFramesX = 3;
+    this.imgFrameNumberX = 0;
+    this.imgFrameNumberY;
+    this.widthOfSingleEnemy = this.widthOfSprite / this.totalNumberOfFramesX;
+  
+    this.imgYPos = imgYPos;
   }
 
   update() {
@@ -189,12 +209,45 @@ class Enemy {
   }
 
   draw() {
-    ctx.fillStyle = "pink";
+    this.countEnemy++;
+    if (this.countEnemy == 8){
+      this.imgFrameNumberX++;
+
+      this.countEnemy = 0;
+    }
+
+    this.imgFrameNumberX = this.imgFrameNumberX % this.totalNumberOfFramesX;
+
+    if (this.direction == "down") {
+      this.imageFrameNumberY = this.imgYPos;
+    }
+    if (this.direction == "left") {
+      this.imageFrameNumberY =this.imgYPos+ this.heightOfSingleEnemy;
+    }
+    if (this.direction == "right") {
+      this.imageFrameNumberY = this.imgYPos+this.heightOfSingleEnemy * 2;
+    }
+    if (this.direction == "up") {
+      this.imageFrameNumberY =this.imgYPos+ this.heightOfSingleEnemy * 3;
+    }
+    // console.log(imageFrameNumberY);
+
     const x = this.x - player.x + player.origin.x;
     const y = this.y - player.y + player.origin.y;
 
-    ctx.drawImage(this.img, x, y, this.width, this.height);
+    ctx.drawImage(
+      this.img,
+      this.imgFrameNumberX * this.widthOfSingleEnemy,
+      this.imageFrameNumberY,
+      this.widthOfSingleEnemy,
+      this.heightOfSingleEnemy,
+      x,
+      y,
+      this.widthOfSingleEnemy,
+      this.widthOfSingleEnemy
+    );
   }
+
   hittingPlayer() {
     if (
       Math.abs(this.x - player.x) <= player.width &&
@@ -249,8 +302,8 @@ class Bullet {
     const enemyOb = enemies[player.place].enemiesEl;
     for (const key in enemyOb) {
       if (
-        Math.abs(this.x - enemyOb[key].x) <= enemyOb[key].width - 10 &&
-        Math.abs(this.y - enemyOb[key].y) <= enemyOb[key].width - 10
+        Math.abs(this.x - enemyOb[key].x) <= enemyOb[key].widthOfSingleEnemy &&
+        Math.abs(this.y - enemyOb[key].y) <= enemyOb[key].heightOfSingleEnemy
       ) {
         delete enemyOb[key];
       }
@@ -278,10 +331,10 @@ class Ornament {
     // console.log(this.direction)
 
     if (
-      player.x + player.width > this.x && //right
-      player.y < this.y + this.height && //down
-      player.x < this.x + this.width && //right
-      player.y + player.height > this.y //up
+      player.x + player.width - 30 > this.x && //right
+      player.y + 15 < this.y + this.height && //up
+      player.x + 30 < this.x + this.width && //left
+      player.y + player.height > this.y //down
     ) {
       player.x = player.oldX;
       player.y = player.oldY;
@@ -342,10 +395,9 @@ class Floor {
     this.w = w;
     this.h = h;
     this.img = document.createElement("img");
-    this.imgUrl = imgUrl;
+    this.img.src = imgUrl;
   }
   draw() {
-    this.img.src = this.imgUrl;
     let x = this.x - player.x + player.origin.x;
     let y = this.y - player.y + player.origin.y;
 
@@ -400,10 +452,18 @@ player.width = widthOfSingleImage;
 player.height = heightOfImage;
 
 const makingPlayer = () => {
-  imgFrameNumberX++;
-  let imageFrameNumberY;
+  player.spriteCount++;
+  if (player.spriteCount % 8 == 0) {
+    imgFrameNumberX++;
+    player.spriteCount = 0;
+  }
+  let imageFrameNumberY = 0;
 
-  imgFrameNumberX = imgFrameNumberX % totalNumberOfFramesX;
+  if (imgFrameNumberX == totalNumberOfFramesX) {
+    imgFrameNumberX = 0;
+  }
+
+  console.log(8 % 15);
 
   if (keys.direction == "down") {
     imageFrameNumberY = 0;
@@ -417,41 +477,17 @@ const makingPlayer = () => {
   if (keys.direction == "up") {
     imageFrameNumberY = 192;
   }
-  console.log(imageFrameNumberY);
-  // //console.log(
-  //   imgFrameNumberX * widthOfSingleImage,
-  //   imageFrameNumberY,
-  //   widthOfSingleImage,
-  //   heightOfImage,
-  //   player.origin.x,
-  //   player.origin.y,
-  //   widthOfSingleImage,
-  //   heightOfImage
-  // );
 
-  // ctx.drawImage(
-  //   player.image,
-  //   imgFrameNumberX * widthOfSingleImage,
-  //   imageFrameNumberY,
-  //   widthOfSingleImage,
-  //   heightOfImage,
-  //   player.origin.x,
-  //   player.origin.y,
-  //   widthOfSingleImage,
-  //   heightOfImage
-  // );
-  console.log(
-    ctx.drawImage(
-      player.image,
-      imgFrameNumberX * widthOfSingleImage,
-      imageFrameNumberY,
-      widthOfSingleImage,
-      heightOfImage,
-      player.origin.x,
-      player.origin.y,
-      widthOfSingleImage,
-      heightOfImage
-    )
+  ctx.drawImage(
+    player.image,
+    imgFrameNumberX * widthOfSingleImage,
+    imageFrameNumberY,
+    widthOfSingleImage,
+    heightOfImage,
+    player.origin.x,
+    player.origin.y,
+    widthOfSingleImage,
+    heightOfImage
   );
 };
 const movingKeysArr = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
@@ -540,12 +576,18 @@ const doorArrH = [100, 10, 10, 100, 10, 10, 100, 10, 100, 10];
 
 //-calling enemies----//
 const enemyImages = [
-  "./img/characters/bat.png",
-  "./img/characters/ghosta.png",
-  "./img/characters/ghostb.png",
-  "./img/characters/golem.png",
-  "./img/characters/skull.png",
+  "./img/characters/batsheet.png",
+  "./img/monkssheet.png",
+  "./img/characters/gostSprite.png",
+  "./img/characters/golemSprite.png",
+  "./img/characters/skullsheet.png",
+  "./img/characters/skullsheet.png",
 ];
+const enemySpriteWidth = [144, 144, 134, 138, 144, 144];
+const enemyImgHeight = [48, 48, 46.75, 48.75, 48, 48];
+
+const enemyImgYPos = [0, 0, 0,0, 0, 48*4];
+
 
 const callingEnemies = () => {
   const currentRoom = enemies[player.place];
@@ -553,15 +595,18 @@ const callingEnemies = () => {
   if (Math.floor(enemyCounter) % 2 == 0) {
     if (Object.values(currentRoom.enemiesEl).length < currentRoom.number) {
       const i = Math.floor(Math.random() * currentRoom.x.length);
+      const enemyIndex = Math.floor(Math.random() * enemyImages.length);
       currentRoom.enemiesEl[enemyCounter] = new Enemy(
         enemyCounter,
         currentRoom.x[i],
         currentRoom.y[i],
-        36,
-        36,
+        enemySpriteWidth[enemyIndex],
+        enemyImgHeight[enemyIndex],
+
         1,
         1,
-        enemyImages[Math.floor(Math.random() * 5)]
+        enemyImages[enemyIndex],
+        enemyImgYPos[enemyIndex]
       );
     }
   }
@@ -867,12 +912,12 @@ const loop = () => {
     floor.draw();
   });
 
-  // for (const key in enemies[player.place].enemiesEl) {
-  //   const enemyOb = enemies[player.place].enemiesEl[key];
-  //   enemyOb.update();
-  //   enemyOb.draw();
-  //   enemyOb.hittingPlayer();
-  // }
+  for (const key in enemies[player.place].enemiesEl) {
+    const enemyOb = enemies[player.place].enemiesEl[key];
+    enemyOb.update();
+    enemyOb.draw();
+    enemyOb.hittingPlayer();
+  }
 
   const bulletArr = Object.values(bulletObj);
 
