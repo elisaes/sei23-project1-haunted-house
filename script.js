@@ -598,19 +598,19 @@ const moving = () => {
   player.oldX = player.x;
   player.oldY = player.y;
   if (keys["ArrowRight"]) {
-    player.x = player.x + 5;
+    player.x = player.x + 3;
     keys.direction = "right";
   }
   if (keys["ArrowLeft"]) {
-    player.x = player.x - 5;
+    player.x = player.x - 3;
     keys.direction = "left";
   }
   if (keys["ArrowDown"]) {
-    player.y = player.y + 5;
+    player.y = player.y + 3;
     keys.direction = "down";
   }
   if (keys["ArrowUp"]) {
-    player.y = player.y - 5;
+    player.y = player.y - 3;
     keys.direction = "up";
   }
 };
@@ -715,8 +715,8 @@ const callingEnemies = () => {
       700,
       192,
       64,
-      4,
-      4,
+      2,
+      2,
       "./img/characters/fatManSprite.png",
       0,
       1,
