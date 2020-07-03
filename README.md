@@ -7,7 +7,8 @@
 - Drawing the house using classes and canvas.
 - Drawing objects using classes and canvas.
 
-`class Floor {
+```
+class Floor {
 constructor(x, y, w, h, imgUrl) {
 this.x = x;
 this.y = y;
@@ -23,7 +24,8 @@ let y = this.y - player.y + player.origin.y;
     ctx.drawImage(this.img, x, y, this.w, this.h);
 
 }
-}`
+}
+```
 
 - Making the game interactive using set interval.
 - Putting hints around the house using classes.
