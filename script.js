@@ -169,7 +169,9 @@ class Enemy {
     deltay,
     imgUrl,
     imgYPos,
-    enemyLife
+    enemyLife,
+    width = null,
+    height = null
   ) {
     this.id = id;
     this.x = x;
@@ -191,6 +193,16 @@ class Enemy {
     this.imgFrameNumberY;
     this.widthOfSingleEnemy = this.widthOfSprite / this.totalNumberOfFramesX;
 
+    if (width) {
+      this.width = width;
+    } else {
+      this.width = this.widthOfSprite / this.totalNumberOfFramesX;
+    }
+    if (height) {
+      this.height = height;
+    } else {
+      this.height = this.widthOfSprite / this.totalNumberOfFramesX;
+    }
     this.imgYPos = imgYPos;
     this.enemyLife = enemyLife;
   }
@@ -198,8 +210,8 @@ class Enemy {
   update() {
     this.oldX = this.x;
     this.oldY = this.y;
-    this.x = this.x - ((this.x - player.x) * deltaT) / 1000;
-    this.y = this.y - ((this.y - player.y) * deltaT) / 1000;
+    this.x = this.x - ((this.x - player.x) * deltaT * this.deltax) / 1000;
+    this.y = this.y - ((this.y - player.y) * deltaT * this.deltay) / 1000;
 
     if (this.oldX < this.x) {
       this.direction = "right";
@@ -248,8 +260,8 @@ class Enemy {
       this.heightOfSingleEnemy,
       x,
       y,
-      this.widthOfSingleEnemy,
-      this.widthOfSingleEnemy
+      this.width,
+      this.height
     );
   }
 
@@ -703,11 +715,13 @@ const callingEnemies = () => {
       700,
       192,
       64,
-      1,
-      1,
+      4,
+      4,
       "./img/characters/fatManSprite.png",
       0,
-      1
+      1,
+      96,
+      96
     );
     console.log(lastEnemyLife);
   }
